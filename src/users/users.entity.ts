@@ -1,5 +1,6 @@
 // src/user/users.entity.ts
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Exclude } from 'class-transformer';
 
 @Entity()
 export class User {
@@ -12,11 +13,13 @@ export class User {
   @Column()
   email: string;
 
-  @Column({ unique: true })  
+  @Column({ unique: true })
   username: string;
 
+  @Exclude()
   @Column()
-  password: string; 
+  password: string;
+
   @Column()
   role: string;
 

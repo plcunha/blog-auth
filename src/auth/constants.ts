@@ -1,5 +1,3 @@
-
-export const jwtConstants = {
-    secret: 'key'
-  };
+export const JWT_SECRET_KEY = 'JWT_SECRET';
+export const JWT_EXPIRATION_KEY = 'JWT_EXPIRATION';
   

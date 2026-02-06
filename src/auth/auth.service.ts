@@ -2,6 +2,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -17,14 +18,14 @@ export class AuthService {
   ): Promise<{ access_token: string }> {
     // Buscar o usuário no banco de dados
     const user = await this.usersService.findOne(username);
-    
+
     // Verificar se o usuário foi encontrado e se a senha está correta
-    if (!user || user.password !== pass) {  // Alterado para verificar diretamente o campo 'password'
+    if (!user || !(await bcrypt.compare(pass, user.password))) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
     // Criar o payload com o ID e o username
-    const payload = { sub: user.id, username: user.username };  // Alterado para 'user.id' ao invés de 'user.userId'
+    const payload = { sub: user.id, username: user.username };
 
     // Gerar o token JWT assinado
     return {
