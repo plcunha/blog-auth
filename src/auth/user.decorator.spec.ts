@@ -6,9 +6,11 @@ import { CurrentUser } from './user.decorator';
  * Helper that extracts the factory function used by a custom param decorator.
  * Based on NestJS testing patterns for custom decorators.
  */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 function getParamDecoratorFactory(decorator: Function) {
   // Apply the decorator to a dummy class method parameter
   class TestController {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public test(@decorator() _value: unknown) {}
   }
 
