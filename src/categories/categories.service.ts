@@ -57,6 +57,19 @@ export class CategoriesService {
     updateCategoryDto: UpdateCategoryDto,
   ): Promise<Category> {
     const category = await this.findById(id);
+
+    // Check for duplicate name on update
+    if (updateCategoryDto.name) {
+      const existing = await this.categoryRepository.findOneBy({
+        name: updateCategoryDto.name,
+      });
+      if (existing && existing.id !== id) {
+        throw new ConflictException(
+          `Categoria "${updateCategoryDto.name}" já existe`,
+        );
+      }
+    }
+
     Object.assign(category, updateCategoryDto);
     return this.categoryRepository.save(category);
   }

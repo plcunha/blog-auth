@@ -2,6 +2,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsEmail,
+  IsIn,
   IsOptional,
   IsString,
   MaxLength,
@@ -30,11 +31,10 @@ export class UpdateUserDto {
   @MinLength(6, { message: 'Senha deve ter no mínimo 6 caracteres' })
   password?: string;
 
-  @ApiPropertyOptional({ example: 'admin' })
-  @IsString()
+  @ApiPropertyOptional({ example: 'admin', enum: ['user', 'admin'] })
+  @IsIn(['user', 'admin'], { message: 'Role deve ser "user" ou "admin"' })
   @IsOptional()
-  @MaxLength(50)
-  role?: string;
+  role?: 'user' | 'admin';
 
   @ApiPropertyOptional({ example: false })
   @IsBoolean()

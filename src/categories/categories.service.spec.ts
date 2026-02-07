@@ -99,6 +99,52 @@ describe('CategoriesService', () => {
     });
   });
 
+  describe('update', () => {
+    it('should update a category', async () => {
+      const category = { id: 1, name: 'Tech', description: 'Old' };
+      repository.findOneBy!.mockImplementation(
+        (criteria: Record<string, unknown>) => {
+          if (criteria.id) return Promise.resolve(category);
+          if (criteria.name) return Promise.resolve(null); // no duplicate
+          return Promise.resolve(null);
+        },
+      );
+      repository.save!.mockImplementation((cat: Record<string, unknown>) =>
+        Promise.resolve({ ...cat }),
+      );
+
+      const result = await service.update(1, {
+        description: 'Updated description',
+      });
+
+      expect(result.description).toBe('Updated description');
+      expect(repository.save).toHaveBeenCalled();
+    });
+
+    it('should throw ConflictException when updating name to a duplicate', async () => {
+      const category = { id: 1, name: 'Tech' };
+      repository.findOneBy!.mockImplementation(
+        (criteria: Record<string, unknown>) => {
+          if (criteria.id) return Promise.resolve(category);
+          if (criteria.name) return Promise.resolve({ id: 2, name: 'Science' });
+          return Promise.resolve(null);
+        },
+      );
+
+      await expect(service.update(1, { name: 'Science' })).rejects.toThrow(
+        ConflictException,
+      );
+    });
+
+    it('should throw NotFoundException when updating non-existent category', async () => {
+      repository.findOneBy!.mockResolvedValue(null);
+
+      await expect(
+        service.update(999, { description: 'Updated' }),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
   describe('remove', () => {
     it('should soft-remove a category', async () => {
       const category = { id: 1, name: 'Tech' };

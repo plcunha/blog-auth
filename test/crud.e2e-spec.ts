@@ -211,6 +211,22 @@ describe('CRUD (e2e)', () => {
           .send({ description: 'Hacked!' })
           .expect(403);
       });
+
+      it('should reject duplicate category name on update (409)', async () => {
+        // Create a second category
+        const res = await request(app.getHttpServer())
+          .post('/api/v1/categories')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ name: 'Ciência', description: 'Posts de ciência' });
+        const secondCategoryId = res.body.id;
+
+        // Try to rename second category to the name of the first
+        return request(app.getHttpServer())
+          .patch(`/api/v1/categories/${secondCategoryId}`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ name: 'Tecnologia' })
+          .expect(409);
+      });
     });
   });
 
@@ -407,6 +423,33 @@ describe('CRUD (e2e)', () => {
   // ─── USERS (admin only) ────────────────────────────────
 
   describe('Users CRUD (admin only)', () => {
+    describe('POST /api/v1/users (admin only)', () => {
+      it('should reject unauthenticated user creation (401)', () => {
+        return request(app.getHttpServer())
+          .post('/api/v1/users')
+          .send({
+            name: 'Hacker',
+            email: 'hacker@evil.com',
+            username: 'hacker',
+            password: 'hack123456',
+          })
+          .expect(401);
+      });
+
+      it('should reject user creation by regular user (403)', () => {
+        return request(app.getHttpServer())
+          .post('/api/v1/users')
+          .set('Authorization', `Bearer ${userToken}`)
+          .send({
+            name: 'Hacker',
+            email: 'hacker@evil.com',
+            username: 'hacker',
+            password: 'hack123456',
+          })
+          .expect(403);
+      });
+    });
+
     describe('GET /api/v1/users (admin only)', () => {
       it('should list users as admin', () => {
         return request(app.getHttpServer())
@@ -474,9 +517,10 @@ describe('CRUD (e2e)', () => {
       let tempUserId: number;
 
       beforeAll(async () => {
-        // Create temp user via the public POST /users endpoint
+        // POST /users is now admin-only, so use adminToken
         const res = await request(app.getHttpServer())
           .post('/api/v1/users')
+          .set('Authorization', `Bearer ${adminToken}`)
           .send({
             name: 'Temp User',
             email: 'temp@example.com',

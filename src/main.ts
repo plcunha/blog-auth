@@ -12,6 +12,14 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const logger = new Logger('Bootstrap');
 
+  // Fail-fast: abort if critical env vars are missing
+  const jwtSecret = configService.get<string>('JWT_SECRET');
+  if (!jwtSecret) {
+    throw new Error(
+      'Variável de ambiente JWT_SECRET é obrigatória — abortando inicialização',
+    );
+  }
+
   // Security: HTTP headers protection
   app.use(helmet());
 

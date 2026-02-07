@@ -68,13 +68,17 @@ export class UsersController {
     return this.usersService.findById(id);
   }
 
-  @ApiOperation({ summary: 'Register a new user (public)' })
+  @ApiOperation({ summary: 'Create a new user (admin only)' })
+  @ApiBearerAuth('JWT-auth')
   @ApiResponse({
     status: 201,
     description: 'User created successfully',
     type: UserResponseDto,
   })
+  @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
   @ApiResponse({ status: 409, description: 'Username or email already in use' })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);

@@ -18,7 +18,13 @@ async function seed() {
 
     const adminUsername = process.env.ADMIN_USERNAME || 'admin';
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@blog.com';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    if (!adminPassword) {
+      throw new Error(
+        'Variável de ambiente ADMIN_PASSWORD é obrigatória para o seed. Defina-a antes de executar.',
+      );
+    }
 
     const existing = await usersService.findByUsername(adminUsername);
     if (existing) {
@@ -34,7 +40,7 @@ async function seed() {
       // Manually set the role to admin (since create() defaults to 'user')
       const admin = await usersService.findByUsername(adminUsername);
       if (admin) {
-        await usersService.update(admin.id, { role: 'admin' } as any);
+        await usersService.update(admin.id, { role: 'admin' });
         logger.log(
           `✅ Admin user created: username="${adminUsername}", email="${adminEmail}"`,
         );

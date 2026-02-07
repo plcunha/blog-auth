@@ -28,6 +28,7 @@ import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './DTO/create-category.dto';
 import { UpdateCategoryDto } from './DTO/update-category.dto';
+import { CategoryResponseDto } from './DTO/category-response.dto';
 
 @ApiTags('categories')
 @Controller('categories')
@@ -39,6 +40,7 @@ export class CategoriesController {
   @ApiResponse({
     status: 200,
     description: 'Returns paginated array of categories',
+    type: CategoryResponseDto,
   })
   @Get()
   findAll(@Query() paginationQuery: PaginationQueryDto) {
@@ -47,7 +49,11 @@ export class CategoriesController {
 
   @ApiOperation({ summary: 'Get a category by ID (public)' })
   @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Returns the category' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the category',
+    type: CategoryResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'Category not found' })
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
@@ -56,7 +62,11 @@ export class CategoriesController {
 
   @ApiOperation({ summary: 'Create a new category (admin only)' })
   @ApiBearerAuth('JWT-auth')
-  @ApiResponse({ status: 201, description: 'Category created' })
+  @ApiResponse({
+    status: 201,
+    description: 'Category created',
+    type: CategoryResponseDto,
+  })
   @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
   @ApiResponse({ status: 409, description: 'Category name already exists' })
   @UseGuards(AuthGuard, RolesGuard)
@@ -69,7 +79,11 @@ export class CategoriesController {
   @ApiOperation({ summary: 'Update a category (admin only)' })
   @ApiBearerAuth('JWT-auth')
   @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Category updated' })
+  @ApiResponse({
+    status: 200,
+    description: 'Category updated',
+    type: CategoryResponseDto,
+  })
   @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
   @ApiResponse({ status: 404, description: 'Category not found' })
   @UseGuards(AuthGuard, RolesGuard)

@@ -108,6 +108,15 @@ export class PostsService {
     // If title is updated and slug is not explicitly provided, regenerate slug
     if (updatePostDto.title && !updatePostDto.slug) {
       updatePostDto.slug = this.generateSlug(updatePostDto.title);
+      // Check auto-generated slug for duplicates
+      const existingSlug = await this.postRepository.findOneBy({
+        slug: updatePostDto.slug,
+      });
+      if (existingSlug && existingSlug.id !== id) {
+        throw new ConflictException(
+          `Já existe um post com o slug "${updatePostDto.slug}"`,
+        );
+      }
     }
 
     Object.assign(post, updatePostDto);

@@ -81,9 +81,14 @@ export class AuthService {
   }
 
   private getRefreshSecret(): string {
-    return (
-      this.configService.get<string>('JWT_REFRESH_SECRET') ||
-      this.configService.get<string>('JWT_SECRET') + '-refresh'
+    const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
+    if (refreshSecret) {
+      return refreshSecret;
+    }
+
+    this.logger.warn(
+      'JWT_REFRESH_SECRET não definido — usando fallback derivado de JWT_SECRET. Defina JWT_REFRESH_SECRET em produção.',
     );
+    return this.configService.get<string>('JWT_SECRET') + '-refresh';
   }
 }

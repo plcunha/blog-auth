@@ -204,6 +204,20 @@ describe('PostsService', () => {
       );
     });
 
+    it('should throw ConflictException when title-only update generates duplicate slug', async () => {
+      const existingPost = { id: 1, title: 'Old Title', slug: 'old-title' };
+      repository.findOne!.mockResolvedValue(existingPost);
+      // The auto-generated slug from 'Taken Title' will be 'taken-title'
+      repository.findOneBy!.mockResolvedValue({
+        id: 2,
+        slug: 'taken-title',
+      });
+
+      await expect(service.update(1, { title: 'Taken Title' })).rejects.toThrow(
+        ConflictException,
+      );
+    });
+
     it('should throw NotFoundException when updating non-existent post', async () => {
       repository.findOne!.mockResolvedValue(null);
 
