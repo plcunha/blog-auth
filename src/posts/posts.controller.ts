@@ -28,6 +28,7 @@ import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './DTO/create-post.dto';
 import { UpdatePostDto } from './DTO/update-post.dto';
+import { PostResponseDto } from './DTO/post-response.dto';
 
 @ApiTags('posts')
 @Controller('posts')
@@ -39,6 +40,7 @@ export class PostsController {
   @ApiResponse({
     status: 200,
     description: 'Returns paginated published posts (newest first)',
+    type: PostResponseDto,
   })
   @Get()
   findPublished(@Query() paginationQuery: PaginationQueryDto) {
@@ -50,6 +52,7 @@ export class PostsController {
   @ApiResponse({
     status: 200,
     description: 'Returns paginated list of all posts',
+    type: PostResponseDto,
   })
   @UseGuards(AuthGuard)
   @Get('all')
@@ -59,7 +62,11 @@ export class PostsController {
 
   @ApiOperation({ summary: 'Get a post by ID (public)' })
   @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Returns the post' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the post',
+    type: PostResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'Post not found' })
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
@@ -68,7 +75,11 @@ export class PostsController {
 
   @ApiOperation({ summary: 'Get a post by slug (public)' })
   @ApiParam({ name: 'slug', type: String })
-  @ApiResponse({ status: 200, description: 'Returns the post' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the post',
+    type: PostResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'Post not found' })
   @Get('slug/:slug')
   findBySlug(@Param('slug') slug: string) {
@@ -77,7 +88,11 @@ export class PostsController {
 
   @ApiOperation({ summary: 'Create a new post (author from JWT)' })
   @ApiBearerAuth('JWT-auth')
-  @ApiResponse({ status: 201, description: 'Post created' })
+  @ApiResponse({
+    status: 201,
+    description: 'Post created',
+    type: PostResponseDto,
+  })
   @ApiResponse({ status: 409, description: 'Slug already exists' })
   @UseGuards(AuthGuard)
   @Post()
@@ -91,7 +106,11 @@ export class PostsController {
   @ApiOperation({ summary: 'Update a post (owner or admin)' })
   @ApiBearerAuth('JWT-auth')
   @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Post updated' })
+  @ApiResponse({
+    status: 200,
+    description: 'Post updated',
+    type: PostResponseDto,
+  })
   @ApiResponse({
     status: 403,
     description: 'Forbidden — not the post author or admin',

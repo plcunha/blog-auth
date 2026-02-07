@@ -14,6 +14,7 @@ const createMockRepository = (): MockRepository => ({
   create: jest.fn(),
   save: jest.fn(),
   remove: jest.fn(),
+  softRemove: jest.fn(),
 });
 
 describe('CategoriesService', () => {
@@ -99,14 +100,14 @@ describe('CategoriesService', () => {
   });
 
   describe('remove', () => {
-    it('should remove a category', async () => {
+    it('should soft-remove a category', async () => {
       const category = { id: 1, name: 'Tech' };
       repository.findOneBy!.mockResolvedValue(category);
-      repository.remove!.mockResolvedValue(category);
+      repository.softRemove!.mockResolvedValue(category);
 
       await service.remove(1);
 
-      expect(repository.remove).toHaveBeenCalledWith(category);
+      expect(repository.softRemove).toHaveBeenCalledWith(category);
     });
 
     it('should throw NotFoundException when removing non-existent category', async () => {

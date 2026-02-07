@@ -116,7 +116,7 @@ export class PostsService {
 
   async remove(id: number): Promise<void> {
     const post = await this.findById(id);
-    await this.postRepository.remove(post);
+    await this.postRepository.softRemove(post);
   }
 
   private generateSlug(title: string): string {

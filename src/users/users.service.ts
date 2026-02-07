@@ -89,6 +89,6 @@ export class UsersService {
 
   async remove(id: number): Promise<void> {
     const user = await this.findById(id);
-    await this.userRepository.remove(user);
+    await this.userRepository.softRemove(user);
   }
 }

@@ -4,9 +4,11 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+import { Exclude } from 'class-transformer';
 import { User } from '../users/users.entity';
 import { Category } from '../categories/category.entity';
 
@@ -50,4 +52,8 @@ export class Post {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @Exclude()
+  @DeleteDateColumn()
+  deletedAt: Date;
 }

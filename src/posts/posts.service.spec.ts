@@ -15,6 +15,7 @@ const createMockRepository = (): MockRepository => ({
   create: jest.fn(),
   save: jest.fn(),
   remove: jest.fn(),
+  softRemove: jest.fn(),
 });
 
 describe('PostsService', () => {
@@ -216,11 +217,11 @@ describe('PostsService', () => {
     it('should remove a post', async () => {
       const post = { id: 1, title: 'To Delete' };
       repository.findOne!.mockResolvedValue(post);
-      repository.remove!.mockResolvedValue(post);
+      repository.softRemove!.mockResolvedValue(post);
 
       await service.remove(1);
 
-      expect(repository.remove).toHaveBeenCalledWith(post);
+      expect(repository.softRemove).toHaveBeenCalledWith(post);
     });
 
     it('should throw NotFoundException when removing non-existent post', async () => {

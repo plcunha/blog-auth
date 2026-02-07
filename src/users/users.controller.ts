@@ -28,6 +28,7 @@ import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './DTO/create-user.dto';
 import { UpdateUserDto } from './DTO/update-user.dto';
+import { UserResponseDto } from './DTO/user-response.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -37,7 +38,11 @@ export class UsersController {
 
   @ApiOperation({ summary: 'List all users (admin only, paginated)' })
   @ApiBearerAuth('JWT-auth')
-  @ApiResponse({ status: 200, description: 'Returns paginated array of users' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns paginated array of users',
+    type: UserResponseDto,
+  })
   @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('admin')
@@ -49,7 +54,11 @@ export class UsersController {
   @ApiOperation({ summary: 'Get a user by ID (admin only)' })
   @ApiBearerAuth('JWT-auth')
   @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Returns the user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the user',
+    type: UserResponseDto,
+  })
   @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
   @ApiResponse({ status: 404, description: 'User not found' })
   @UseGuards(AuthGuard, RolesGuard)
@@ -60,7 +69,11 @@ export class UsersController {
   }
 
   @ApiOperation({ summary: 'Register a new user (public)' })
-  @ApiResponse({ status: 201, description: 'User created successfully' })
+  @ApiResponse({
+    status: 201,
+    description: 'User created successfully',
+    type: UserResponseDto,
+  })
   @ApiResponse({ status: 409, description: 'Username or email already in use' })
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
@@ -70,7 +83,11 @@ export class UsersController {
   @ApiOperation({ summary: 'Update a user (admin only)' })
   @ApiBearerAuth('JWT-auth')
   @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'User updated successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'User updated successfully',
+    type: UserResponseDto,
+  })
   @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
   @ApiResponse({ status: 404, description: 'User not found' })
   @UseGuards(AuthGuard, RolesGuard)

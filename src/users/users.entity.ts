@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 
@@ -36,4 +37,8 @@ export class User {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @Exclude()
+  @DeleteDateColumn()
+  deletedAt: Date;
 }

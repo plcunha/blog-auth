@@ -1,5 +1,6 @@
 import {
   Body,
+  ClassSerializerInterceptor,
   Controller,
   Delete,
   Get,
@@ -11,6 +12,7 @@ import {
   Post,
   Query,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -29,6 +31,7 @@ import { UpdateCategoryDto } from './DTO/update-category.dto';
 
 @ApiTags('categories')
 @Controller('categories')
+@UseInterceptors(ClassSerializerInterceptor)
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 

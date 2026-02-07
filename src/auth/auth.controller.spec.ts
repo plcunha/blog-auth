@@ -13,10 +13,12 @@ describe('AuthController', () => {
   beforeEach(async () => {
     authService = {
       signIn: jest.fn(),
+      refreshTokens: jest.fn(),
     };
 
     usersService = {
       create: jest.fn(),
+      findById: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -65,16 +67,19 @@ describe('AuthController', () => {
   });
 
   describe('signIn', () => {
-    it('should return access_token from authService', async () => {
-      const token = { access_token: 'jwt-token' };
-      authService.signIn!.mockResolvedValue(token);
+    it('should return access_token and refresh_token from authService', async () => {
+      const tokens = {
+        access_token: 'jwt-token',
+        refresh_token: 'refresh-token',
+      };
+      authService.signIn!.mockResolvedValue(tokens);
 
       const result = await controller.signIn({
         username: 'testuser',
         password: 'password123',
       });
 
-      expect(result).toEqual(token);
+      expect(result).toEqual(tokens);
       expect(authService.signIn).toHaveBeenCalledWith(
         'testuser',
         'password123',
@@ -82,13 +87,41 @@ describe('AuthController', () => {
     });
   });
 
+  describe('refresh', () => {
+    it('should return new tokens from authService', async () => {
+      const tokens = {
+        access_token: 'new-jwt-token',
+        refresh_token: 'new-refresh-token',
+      };
+      authService.refreshTokens!.mockResolvedValue(tokens);
+
+      const result = await controller.refresh({
+        refresh_token: 'old-refresh-token',
+      });
+
+      expect(result).toEqual(tokens);
+      expect(authService.refreshTokens).toHaveBeenCalledWith(
+        'old-refresh-token',
+      );
+    });
+  });
+
   describe('getProfile', () => {
-    it('should return the current user from JWT payload', () => {
-      const user = { sub: 1, username: 'testuser' };
+    it('should return the full user from the database', async () => {
+      const fullUser = {
+        id: 1,
+        name: 'Test User',
+        email: 'test@test.com',
+        username: 'testuser',
+        role: 'user',
+        isActive: true,
+      };
+      usersService.findById!.mockResolvedValue(fullUser);
 
-      const result = controller.getProfile(user);
+      const result = await controller.getProfile(1);
 
-      expect(result).toEqual(user);
+      expect(result).toEqual(fullUser);
+      expect(usersService.findById).toHaveBeenCalledWith(1);
     });
   });
 });
