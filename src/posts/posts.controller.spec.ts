@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ForbiddenException } from '@nestjs/common';
 import { PostsController } from './posts.controller';
 import { PostsService } from './posts.service';
 import { AuthGuard } from '../auth/auth.guard';
@@ -6,6 +7,10 @@ import { AuthGuard } from '../auth/auth.guard';
 describe('PostsController', () => {
   let controller: PostsController;
   let postsService: Partial<Record<keyof PostsService, jest.Mock>>;
+
+  const ownerUser = { sub: 5, role: 'user' };
+  const adminUser = { sub: 99, role: 'admin' };
+  const otherUser = { sub: 10, role: 'user' };
 
   beforeEach(async () => {
     postsService = {
@@ -113,25 +118,68 @@ describe('PostsController', () => {
   });
 
   describe('update', () => {
-    it('should update and return the post', async () => {
+    it('should allow owner to update their own post', async () => {
+      const post = { id: 1, title: 'My Post', authorId: 5 };
+      postsService.findById!.mockResolvedValue(post);
       const dto = { title: 'Updated Title' };
       const updated = { id: 1, title: 'Updated Title' };
       postsService.update!.mockResolvedValue(updated);
 
-      const result = await controller.update(1, dto);
+      const result = await controller.update(1, dto, ownerUser);
 
       expect(result).toEqual(updated);
       expect(postsService.update).toHaveBeenCalledWith(1, dto);
     });
+
+    it('should allow admin to update any post', async () => {
+      const dto = { title: 'Admin Updated' };
+      const updated = { id: 1, title: 'Admin Updated' };
+      postsService.update!.mockResolvedValue(updated);
+
+      const result = await controller.update(1, dto, adminUser);
+
+      expect(result).toEqual(updated);
+      // Admin should NOT call findById for ownership check
+      expect(postsService.findById).not.toHaveBeenCalled();
+    });
+
+    it('should reject non-owner non-admin from updating', async () => {
+      const post = { id: 1, title: 'My Post', authorId: 5 };
+      postsService.findById!.mockResolvedValue(post);
+
+      await expect(
+        controller.update(1, { title: 'Hack' }, otherUser),
+      ).rejects.toThrow(ForbiddenException);
+    });
   });
 
   describe('remove', () => {
-    it('should call remove on service', async () => {
+    it('should allow owner to delete their own post', async () => {
+      const post = { id: 1, title: 'My Post', authorId: 5 };
+      postsService.findById!.mockResolvedValue(post);
       postsService.remove!.mockResolvedValue(undefined);
 
-      await controller.remove(1);
+      await controller.remove(1, ownerUser);
 
       expect(postsService.remove).toHaveBeenCalledWith(1);
+    });
+
+    it('should allow admin to delete any post', async () => {
+      postsService.remove!.mockResolvedValue(undefined);
+
+      await controller.remove(1, adminUser);
+
+      expect(postsService.remove).toHaveBeenCalledWith(1);
+      expect(postsService.findById).not.toHaveBeenCalled();
+    });
+
+    it('should reject non-owner non-admin from deleting', async () => {
+      const post = { id: 1, title: 'My Post', authorId: 5 };
+      postsService.findById!.mockResolvedValue(post);
+
+      await expect(controller.remove(1, otherUser)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 });

@@ -3,6 +3,7 @@ import {
   ClassSerializerInterceptor,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -87,30 +88,62 @@ export class PostsController {
     return this.postsService.create(createPostDto, authorId);
   }
 
-  @ApiOperation({ summary: 'Update a post' })
+  @ApiOperation({ summary: 'Update a post (owner or admin)' })
   @ApiBearerAuth('JWT-auth')
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Post updated' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden — not the post author or admin',
+  })
   @ApiResponse({ status: 404, description: 'Post not found' })
   @ApiResponse({ status: 409, description: 'Slug already exists' })
   @UseGuards(AuthGuard)
   @Patch(':id')
-  update(
+  async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updatePostDto: UpdatePostDto,
+    @CurrentUser() user: { sub: number; role: string },
   ) {
+    await this.assertOwnerOrAdmin(id, user);
     return this.postsService.update(id, updatePostDto);
   }
 
-  @ApiOperation({ summary: 'Delete a post' })
+  @ApiOperation({ summary: 'Delete a post (owner or admin)' })
   @ApiBearerAuth('JWT-auth')
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 204, description: 'Post deleted' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden — not the post author or admin',
+  })
   @ApiResponse({ status: 404, description: 'Post not found' })
   @UseGuards(AuthGuard)
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id', ParseIntPipe) id: number) {
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: { sub: number; role: string },
+  ) {
+    await this.assertOwnerOrAdmin(id, user);
     await this.postsService.remove(id);
+  }
+
+  /**
+   * Checks that the current user is either the post author or an admin.
+   * Throws ForbiddenException otherwise.
+   */
+  private async assertOwnerOrAdmin(
+    postId: number,
+    user: { sub: number; role: string },
+  ): Promise<void> {
+    if (user.role === 'admin') return;
+
+    const post = await this.postsService.findById(postId);
+    if (post.authorId !== user.sub) {
+      throw new ForbiddenException(
+        'Você só pode alterar/excluir seus próprios posts',
+      );
+    }
   }
 }

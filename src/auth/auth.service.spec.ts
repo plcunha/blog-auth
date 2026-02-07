@@ -41,6 +41,7 @@ describe('AuthService', () => {
         id: 1,
         username: 'testuser',
         password: hashedPassword,
+        role: 'user',
       });
 
       const result = await authService.signIn('testuser', 'correct-password');
@@ -49,6 +50,7 @@ describe('AuthService', () => {
       expect(jwtService.signAsync).toHaveBeenCalledWith({
         sub: 1,
         username: 'testuser',
+        role: 'user',
       });
     });
 
@@ -66,6 +68,7 @@ describe('AuthService', () => {
         id: 1,
         username: 'testuser',
         password: hashedPassword,
+        role: 'user',
       });
 
       await expect(

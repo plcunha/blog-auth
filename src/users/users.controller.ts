@@ -22,6 +22,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './DTO/create-user.dto';
@@ -33,21 +35,25 @@ import { UpdateUserDto } from './DTO/update-user.dto';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @ApiOperation({ summary: 'List all users (paginated)' })
+  @ApiOperation({ summary: 'List all users (admin only, paginated)' })
   @ApiBearerAuth('JWT-auth')
   @ApiResponse({ status: 200, description: 'Returns paginated array of users' })
-  @UseGuards(AuthGuard)
+  @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
   @Get()
   findAll(@Query() paginationQuery: PaginationQueryDto) {
     return this.usersService.findAll(paginationQuery);
   }
 
-  @ApiOperation({ summary: 'Get a user by ID' })
+  @ApiOperation({ summary: 'Get a user by ID (admin only)' })
   @ApiBearerAuth('JWT-auth')
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Returns the user' })
+  @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.findById(id);
@@ -61,12 +67,14 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
-  @ApiOperation({ summary: 'Update a user' })
+  @ApiOperation({ summary: 'Update a user (admin only)' })
   @ApiBearerAuth('JWT-auth')
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'User updated successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -75,12 +83,14 @@ export class UsersController {
     return this.usersService.update(id, updateUserDto);
   }
 
-  @ApiOperation({ summary: 'Delete a user' })
+  @ApiOperation({ summary: 'Delete a user (admin only)' })
   @ApiBearerAuth('JWT-auth')
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 204, description: 'User deleted' })
+  @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id', ParseIntPipe) id: number) {

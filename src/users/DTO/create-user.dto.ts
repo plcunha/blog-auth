@@ -1,9 +1,7 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsBoolean,
   IsEmail,
   IsNotEmpty,
-  IsOptional,
   IsString,
   MinLength,
   MaxLength,
@@ -37,18 +35,4 @@ export class CreateUserDto {
   @IsNotEmpty({ message: 'Senha é obrigatória' })
   @MinLength(6, { message: 'Senha deve ter no mínimo 6 caracteres' })
   password: string;
-
-  @ApiPropertyOptional({ example: 'user', description: 'Role (default: user)' })
-  @IsString()
-  @IsOptional()
-  @MaxLength(50)
-  role?: string;
-
-  @ApiPropertyOptional({
-    example: true,
-    description: 'Active status (default: true)',
-  })
-  @IsBoolean()
-  @IsOptional()
-  isActive?: boolean;
 }

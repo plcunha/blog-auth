@@ -20,6 +20,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './DTO/create-category.dto';
@@ -49,22 +51,26 @@ export class CategoriesController {
     return this.categoriesService.findById(id);
   }
 
-  @ApiOperation({ summary: 'Create a new category' })
+  @ApiOperation({ summary: 'Create a new category (admin only)' })
   @ApiBearerAuth('JWT-auth')
   @ApiResponse({ status: 201, description: 'Category created' })
+  @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
   @ApiResponse({ status: 409, description: 'Category name already exists' })
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
   @Post()
   create(@Body() createCategoryDto: CreateCategoryDto) {
     return this.categoriesService.create(createCategoryDto);
   }
 
-  @ApiOperation({ summary: 'Update a category' })
+  @ApiOperation({ summary: 'Update a category (admin only)' })
   @ApiBearerAuth('JWT-auth')
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Category updated' })
+  @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
   @ApiResponse({ status: 404, description: 'Category not found' })
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -73,12 +79,14 @@ export class CategoriesController {
     return this.categoriesService.update(id, updateCategoryDto);
   }
 
-  @ApiOperation({ summary: 'Delete a category' })
+  @ApiOperation({ summary: 'Delete a category (admin only)' })
   @ApiBearerAuth('JWT-auth')
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 204, description: 'Category deleted' })
+  @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
   @ApiResponse({ status: 404, description: 'Category not found' })
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id', ParseIntPipe) id: number) {
