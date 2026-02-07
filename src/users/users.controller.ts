@@ -1,53 +1,58 @@
-import { Body, Controller, Delete, Get, NotFoundException, Param, Post } from "@nestjs/common";
-import { Repository } from "typeorm";
-import { User } from "./users.entity";
-import { InjectRepository } from "@nestjs/typeorm";
-import { UserDTO } from "./DTO/users.dto";
+import {
+  Body,
+  ClassSerializerInterceptor,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { AuthGuard } from '../auth/auth.guard';
+import { UsersService } from './users.service';
+import { CreateUserDto } from './DTO/create-user.dto';
+import { UpdateUserDto } from './DTO/update-user.dto';
 
-@Controller("users")
+@Controller('users')
+@UseInterceptors(ClassSerializerInterceptor) // Strips @Exclude() fields (password)
 export class UsersController {
+  constructor(private readonly usersService: UsersService) {}
 
-    constructor(
-        @InjectRepository(User)
-        private userRepository: Repository<User>
-    ) { }
+  @UseGuards(AuthGuard)
+  @Get()
+  findAll() {
+    return this.usersService.findAll();
+  }
 
-    @Get()
-    getUsersList() {
-        return this.userRepository.find();
-    }
+  @UseGuards(AuthGuard)
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.findById(id);
+  }
 
-    @Get(":id")
-    async getUserById(@Param("id") id: number) {
-        const user = await this.userRepository.findOneBy({ id });
-        if (!user) {
-            throw new NotFoundException("Usuário não encontrado");
-        }
+  @Post()
+  create(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.create(createUserDto);
+  }
 
-        return user;
-    }
+  @UseGuards(AuthGuard)
+  @Patch(':id')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return this.usersService.update(id, updateUserDto);
+  }
 
-    @Post()
-    createUser(@Body() userDto: UserDTO) {
-        const user = this.userRepository.create();
-
-        user.name = userDto.name;
-        user.email = userDto.email;
-        user.role = userDto.role;
-        user.isActive = userDto.isActive;
-
-        this.userRepository.save(user);
-
-        return user;
-    }
-
-    @Delete(":id")
-    async deleteUserById(@Param("id") id: number) {
-        const user = await this.userRepository.findOneBy({ id });
-        if (!user) {
-            throw new NotFoundException("Usuário não encontrado");
-        }
-
-        this.userRepository.delete({ id: user.id });
-    }
+  @UseGuards(AuthGuard)
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    await this.usersService.remove(id);
+  }
 }

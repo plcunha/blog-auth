@@ -1,25 +1,39 @@
-// src/user/users.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { Exclude } from 'class-transformer';
 
-@Entity()
+@Entity('users')
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ length: 100 })
   name: string;
 
-  @Column()
+  @Column({ length: 150, unique: true })
   email: string;
 
-  @Column({ unique: true })  
+  @Column({ length: 50, unique: true })
   username: string;
 
+  @Exclude()
   @Column()
-  password: string; 
-  @Column()
+  password: string;
+
+  @Column({ length: 50, default: 'user' })
   role: string;
 
-  @Column()
+  @Column({ default: true })
   isActive: boolean;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }
