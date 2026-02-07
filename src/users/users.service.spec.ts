@@ -121,6 +121,69 @@ describe('UsersService', () => {
     });
   });
 
+  describe('findByUsername', () => {
+    it('should return a user when found by username', async () => {
+      const user = { id: 1, username: 'johndoe' };
+      repository.findOneBy!.mockResolvedValue(user);
+
+      const result = await service.findByUsername('johndoe');
+
+      expect(result).toEqual(user);
+      expect(repository.findOneBy).toHaveBeenCalledWith({
+        username: 'johndoe',
+      });
+    });
+
+    it('should return null when user not found by username', async () => {
+      repository.findOneBy!.mockResolvedValue(null);
+
+      const result = await service.findByUsername('nonexistent');
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('update', () => {
+    it('should update a user without changing password', async () => {
+      const existingUser = { id: 1, name: 'Old Name', username: 'john' };
+      repository.findOneBy!.mockResolvedValue(existingUser);
+      repository.save!.mockImplementation((user: Record<string, unknown>) =>
+        Promise.resolve({ ...user }),
+      );
+
+      const result = await service.update(1, { name: 'New Name' });
+
+      expect(result.name).toBe('New Name');
+      expect(repository.save).toHaveBeenCalled();
+    });
+
+    it('should hash the password when updating password', async () => {
+      const existingUser = { id: 1, name: 'John', password: 'old-hash' };
+      repository.findOneBy!.mockResolvedValue(existingUser);
+      repository.save!.mockImplementation((user: Record<string, unknown>) =>
+        Promise.resolve({ ...user }),
+      );
+
+      const result = await service.update(1, { password: 'new-password' });
+
+      // Password should be hashed, not plain text
+      expect(result.password).not.toBe('new-password');
+      const isHashed = await bcrypt.compare(
+        'new-password',
+        result.password as string,
+      );
+      expect(isHashed).toBe(true);
+    });
+
+    it('should throw NotFoundException when updating non-existent user', async () => {
+      repository.findOneBy!.mockResolvedValue(null);
+
+      await expect(service.update(999, { name: 'Test' })).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
   describe('remove', () => {
     it('should remove an existing user', async () => {
       const user = { id: 1, name: 'Test' };
