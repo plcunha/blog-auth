@@ -17,7 +17,8 @@ RESTful API for a blog platform built with **NestJS**, featuring JWT authenticat
 - **Swagger / OpenAPI** — API docs
 - **Helmet** — Security headers
 - **@nestjs/throttler** — Rate limiting
-- **Docker Compose** — MySQL + Adminer
+- **Docker Compose** — MySQL + Adminer + API
+- **Docker** — Multi-stage production image (~180MB, non-root)
 - **GitHub Actions** — CI pipeline (lint, test, build)
 
 ---
@@ -26,7 +27,7 @@ RESTful API for a blog platform built with **NestJS**, featuring JWT authenticat
 
 ```bash
 # 1. Start the database
-docker compose up -d
+docker compose up -d database adminer
 
 # 2. Install dependencies
 npm install
@@ -40,6 +41,15 @@ npm run seed
 # 5. Start in development mode
 npm run start:dev
 ```
+
+### Docker (Production)
+
+```bash
+# Build and run everything (API + MySQL + Adminer)
+docker compose up -d --build
+```
+
+The production image uses a multi-stage build (~180MB), runs as a non-root user, and includes a built-in health check.
 
 The API will be available at `http://localhost:3000/api/v1`
 Swagger docs at `http://localhost:3000/api/docs`
@@ -113,9 +123,10 @@ All endpoints are prefixed with `/api/v1`.
 
 ### Health
 
-| Method | Endpoint  | Auth   | Description  |
-| ------ | --------- | ------ | ------------ |
-| `GET`  | `/health` | Public | Health check |
+| Method | Endpoint          | Auth   | Description                                |
+| ------ | ----------------- | ------ | ------------------------------------------ |
+| `GET`  | `/health`         | Public | Quick health check (no DB query)           |
+| `GET`  | `/health/details` | Public | Detailed health check with DB connectivity |
 
 ---
 
@@ -163,19 +174,22 @@ Response format:
 - **Post Ownership** — Users can only modify/delete their own posts
 - **Soft Deletes** — Posts and categories are soft-deleted (recoverable)
 - **Fail-Fast Startup** — App refuses to start without `JWT_SECRET`
+- **Correlation IDs** — Every request gets/preserves an `X-Request-Id` header for traceability
+- **Graceful Shutdown** — Proper cleanup on SIGTERM/SIGINT via shutdown hooks
+- **Non-Root Docker** — Production container runs as unprivileged user
 
 ---
 
 ## Running Tests
 
 ```bash
-# Unit tests (125 tests)
+# Unit tests (131 tests)
 npm run test
 
 # Unit tests with coverage (100% line coverage)
 npm run test:cov
 
-# E2E tests (57 tests — uses in-memory SQLite)
+# E2E tests (58 tests — uses in-memory SQLite)
 npm run test:e2e
 ```
 
@@ -186,8 +200,8 @@ npm run test:e2e
 GitHub Actions runs on every push/PR to `main`:
 
 1. **Lint** — ESLint
-2. **Unit Tests** — 125 tests with coverage (Node 18, 20 & 22)
-3. **E2E Tests** — 57 tests with in-memory SQLite (Node 18, 20 & 22)
+2. **Unit Tests** — 131 tests with coverage (Node 18, 20 & 22)
+3. **E2E Tests** — 58 tests with in-memory SQLite (Node 18, 20 & 22)
 4. **Build** — Production compilation
 5. **Artifact** — Coverage report uploaded (7-day retention)
 
@@ -199,11 +213,11 @@ GitHub Actions runs on every push/PR to `main`:
 src/
   auth/           # JWT auth, guards, decorators, login/register/refresh
   categories/     # Categories CRUD (admin write, soft-delete)
-  common/         # Shared DTOs (pagination), filters, interceptors
+  common/         # Shared DTOs (pagination), filters, interceptors, middleware
   posts/          # Posts CRUD (ownership enforced, soft-delete)
   users/          # Users CRUD (admin management)
-  app.module.ts   # Root module (ConfigModule, TypeORM, Throttler)
-  main.ts         # Bootstrap (Helmet, CORS, Swagger, ValidationPipe)
+  app.module.ts   # Root module (ConfigModule, TypeORM, Throttler, middleware)
+  main.ts         # Bootstrap (Helmet, CORS, Swagger, ValidationPipe, shutdown hooks)
   seed.ts         # Database seeder (admin user + sample data)
 test/
   auth.e2e-spec.ts  # Auth flow E2E tests

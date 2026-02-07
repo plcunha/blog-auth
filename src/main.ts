@@ -20,6 +20,9 @@ async function bootstrap() {
     );
   }
 
+  // Enable graceful shutdown hooks (SIGTERM, SIGINT)
+  app.enableShutdownHooks();
+
   // Security: HTTP headers protection
   app.use(helmet());
 

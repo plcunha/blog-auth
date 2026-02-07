@@ -10,9 +10,10 @@ import { Request } from 'express';
 
 /**
  * Global interceptor that logs every incoming request and its response time.
+ * Includes the X-Request-Id for correlation when available.
  *
  * Example output:
- *   [LoggingInterceptor] GET /api/v1/posts — 200 (12ms)
+ *   [LoggingInterceptor] [abc-123] GET /api/v1/posts — 200 (12ms)
  */
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
@@ -21,6 +22,7 @@ export class LoggingInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest<Request>();
     const { method, url } = request;
+    const requestId = request.headers['x-request-id'] || '-';
     const start = Date.now();
 
     return next.handle().pipe(
@@ -28,7 +30,7 @@ export class LoggingInterceptor implements NestInterceptor {
         const response = context.switchToHttp().getResponse();
         const elapsed = Date.now() - start;
         this.logger.log(
-          `${method} ${url} — ${response.statusCode} (${elapsed}ms)`,
+          `[${requestId}] ${method} ${url} — ${response.statusCode} (${elapsed}ms)`,
         );
       }),
     );
