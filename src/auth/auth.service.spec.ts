@@ -145,5 +145,53 @@ describe('AuthService', () => {
         authService.refreshTokens('valid-refresh-token'),
       ).rejects.toThrow(UnauthorizedException);
     });
+
+    it('should throw UnauthorizedException when user is not found', async () => {
+      jwtService.verifyAsync!.mockResolvedValue({
+        sub: 999,
+        username: 'deleted',
+        role: 'user',
+      });
+
+      usersService.findById!.mockResolvedValue(null);
+
+      await expect(
+        authService.refreshTokens('valid-refresh-token'),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('getRefreshSecret (fallback)', () => {
+    it('should fall back to JWT_SECRET + "-refresh" when JWT_REFRESH_SECRET is not set', async () => {
+      // Override configService to return undefined for JWT_REFRESH_SECRET
+      configService.get!.mockImplementation(
+        (key: string, fallback?: string) => {
+          const map: Record<string, string> = {
+            JWT_SECRET: 'my-secret',
+            JWT_REFRESH_EXPIRATION: '7d',
+          };
+          return map[key] || fallback;
+        },
+      );
+
+      const hashedPassword = await bcrypt.hash('password', 10);
+      usersService.findByUsername!.mockResolvedValue({
+        id: 1,
+        username: 'testuser',
+        password: hashedPassword,
+        role: 'user',
+      });
+
+      // signIn internally calls generateTokens → getRefreshSecret
+      await authService.signIn('testuser', 'password');
+
+      // The refresh token signAsync call should use the fallback secret
+      const refreshSignCall = jwtService.signAsync!.mock.calls[1];
+      expect(refreshSignCall[1]).toEqual(
+        expect.objectContaining({
+          secret: 'my-secret-refresh',
+        }),
+      );
+    });
   });
 });
