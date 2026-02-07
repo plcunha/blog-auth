@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 
@@ -32,8 +33,29 @@ async function bootstrap() {
     }),
   );
 
+  // Swagger / OpenAPI documentation
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Blog Auth API')
+    .setDescription(
+      'RESTful API for a blog platform with JWT authentication, user management, categories, and posts.',
+    )
+    .setVersion('1.0')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'JWT-auth',
+    )
+    .addTag('auth', 'Authentication endpoints')
+    .addTag('users', 'User management')
+    .addTag('categories', 'Blog categories')
+    .addTag('posts', 'Blog posts')
+    .build();
+
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api/docs', app, document);
+
   const port = configService.get<number>('PORT', 3000);
   await app.listen(port);
   logger.log(`🚀 Application running on port ${port}`);
+  logger.log(`📖 Swagger docs available at http://localhost:${port}/api/docs`);
 }
 bootstrap();
