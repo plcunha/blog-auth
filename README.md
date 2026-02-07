@@ -186,9 +186,10 @@ npm run test:e2e
 GitHub Actions runs on every push/PR to `main`:
 
 1. **Lint** — ESLint
-2. **Test** — Unit tests with coverage (Node 18 & 20)
-3. **Build** — Production compilation
-4. **Artifact** — Coverage report uploaded (7-day retention)
+2. **Unit Tests** — 125 tests with coverage (Node 18, 20 & 22)
+3. **E2E Tests** — 57 tests with in-memory SQLite (Node 18, 20 & 22)
+4. **Build** — Production compilation
+5. **Artifact** — Coverage report uploaded (7-day retention)
 
 ---
 
