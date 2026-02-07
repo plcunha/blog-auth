@@ -169,10 +169,10 @@ Response format:
 ## Running Tests
 
 ```bash
-# Unit tests (119 tests)
+# Unit tests (125 tests)
 npm run test
 
-# Unit tests with coverage (99.6% line coverage)
+# Unit tests with coverage (100% line coverage)
 npm run test:cov
 
 # E2E tests (57 tests — uses in-memory SQLite)
