@@ -9,6 +9,7 @@ type MockRepository = Partial<Record<keyof Repository<Post>, jest.Mock>>;
 
 const createMockRepository = (): MockRepository => ({
   find: jest.fn(),
+  findAndCount: jest.fn(),
   findOne: jest.fn(),
   findOneBy: jest.fn(),
   create: jest.fn(),
@@ -41,31 +42,41 @@ describe('PostsService', () => {
   });
 
   describe('findAll', () => {
-    it('should return all posts with relations', async () => {
+    it('should return paginated posts with relations', async () => {
       const posts = [{ id: 1, title: 'Test Post', author: {}, category: {} }];
-      repository.find!.mockResolvedValue(posts);
+      repository.findAndCount!.mockResolvedValue([posts, 1]);
 
-      const result = await service.findAll();
+      const result = await service.findAll({ page: 1, limit: 20 });
 
-      expect(result).toEqual(posts);
-      expect(repository.find).toHaveBeenCalledWith({
+      expect(result.data).toEqual(posts);
+      expect(result.total).toBe(1);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(20);
+      expect(result.totalPages).toBe(1);
+      expect(repository.findAndCount).toHaveBeenCalledWith({
         relations: ['author', 'category'],
+        order: { createdAt: 'DESC' },
+        skip: 0,
+        take: 20,
       });
     });
   });
 
   describe('findPublished', () => {
-    it('should return only published posts ordered by createdAt DESC', async () => {
+    it('should return paginated published posts ordered by createdAt DESC', async () => {
       const posts = [{ id: 1, title: 'Published Post', isPublished: true }];
-      repository.find!.mockResolvedValue(posts);
+      repository.findAndCount!.mockResolvedValue([posts, 1]);
 
-      const result = await service.findPublished();
+      const result = await service.findPublished({ page: 1, limit: 10 });
 
-      expect(result).toEqual(posts);
-      expect(repository.find).toHaveBeenCalledWith({
+      expect(result.data).toEqual(posts);
+      expect(result.total).toBe(1);
+      expect(repository.findAndCount).toHaveBeenCalledWith({
         where: { isPublished: true },
         relations: ['author', 'category'],
         order: { createdAt: 'DESC' },
+        skip: 0,
+        take: 10,
       });
     });
   });

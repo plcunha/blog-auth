@@ -8,6 +8,8 @@ import { Repository } from 'typeorm';
 import { Post } from './post.entity';
 import { CreatePostDto } from './DTO/create-post.dto';
 import { UpdatePostDto } from './DTO/update-post.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
 
 @Injectable()
 export class PostsService {
@@ -16,18 +18,31 @@ export class PostsService {
     private readonly postRepository: Repository<Post>,
   ) {}
 
-  async findAll(): Promise<Post[]> {
-    return this.postRepository.find({
+  async findAll(
+    paginationQuery: PaginationQueryDto,
+  ): Promise<PaginatedResponseDto<Post>> {
+    const { page = 1, limit = 20 } = paginationQuery;
+    const [data, total] = await this.postRepository.findAndCount({
       relations: ['author', 'category'],
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return new PaginatedResponseDto(data, total, page, limit);
   }
 
-  async findPublished(): Promise<Post[]> {
-    return this.postRepository.find({
+  async findPublished(
+    paginationQuery: PaginationQueryDto,
+  ): Promise<PaginatedResponseDto<Post>> {
+    const { page = 1, limit = 20 } = paginationQuery;
+    const [data, total] = await this.postRepository.findAndCount({
       where: { isPublished: true },
       relations: ['author', 'category'],
       order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return new PaginatedResponseDto(data, total, page, limit);
   }
 
   async findById(id: number): Promise<Post> {

@@ -10,6 +10,7 @@ type MockRepository = Partial<Record<keyof Repository<User>, jest.Mock>>;
 
 const createMockRepository = (): MockRepository => ({
   find: jest.fn(),
+  findAndCount: jest.fn(),
   findOne: jest.fn(),
   findOneBy: jest.fn(),
   create: jest.fn(),
@@ -42,14 +43,22 @@ describe('UsersService', () => {
   });
 
   describe('findAll', () => {
-    it('should return an array of users', async () => {
+    it('should return a paginated response of users', async () => {
       const users = [{ id: 1, name: 'Test User' }];
-      repository.find!.mockResolvedValue(users);
+      repository.findAndCount!.mockResolvedValue([users, 1]);
 
-      const result = await service.findAll();
+      const result = await service.findAll({ page: 1, limit: 20 });
 
-      expect(result).toEqual(users);
-      expect(repository.find).toHaveBeenCalled();
+      expect(result.data).toEqual(users);
+      expect(result.total).toBe(1);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(20);
+      expect(result.totalPages).toBe(1);
+      expect(repository.findAndCount).toHaveBeenCalledWith({
+        order: { createdAt: 'DESC' },
+        skip: 0,
+        take: 20,
+      });
     });
   });
 

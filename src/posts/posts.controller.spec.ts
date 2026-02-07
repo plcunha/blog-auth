@@ -34,29 +34,44 @@ describe('PostsController', () => {
   });
 
   describe('findPublished', () => {
-    it('should return published posts', async () => {
-      const posts = [{ id: 1, title: 'Published', isPublished: true }];
-      postsService.findPublished!.mockResolvedValue(posts);
+    it('should return paginated published posts', async () => {
+      const paginatedResult = {
+        data: [{ id: 1, title: 'Published', isPublished: true }],
+        total: 1,
+        page: 1,
+        limit: 20,
+        totalPages: 1,
+      };
+      postsService.findPublished!.mockResolvedValue(paginatedResult);
 
-      const result = await controller.findPublished();
+      const result = await controller.findPublished({ page: 1, limit: 20 });
 
-      expect(result).toEqual(posts);
-      expect(postsService.findPublished).toHaveBeenCalled();
+      expect(result).toEqual(paginatedResult);
+      expect(postsService.findPublished).toHaveBeenCalledWith({
+        page: 1,
+        limit: 20,
+      });
     });
   });
 
   describe('findAll', () => {
-    it('should return all posts (including drafts)', async () => {
-      const posts = [
-        { id: 1, title: 'Published', isPublished: true },
-        { id: 2, title: 'Draft', isPublished: false },
-      ];
-      postsService.findAll!.mockResolvedValue(posts);
+    it('should return paginated posts including drafts', async () => {
+      const paginatedResult = {
+        data: [
+          { id: 1, title: 'Published', isPublished: true },
+          { id: 2, title: 'Draft', isPublished: false },
+        ],
+        total: 2,
+        page: 1,
+        limit: 20,
+        totalPages: 1,
+      };
+      postsService.findAll!.mockResolvedValue(paginatedResult);
 
-      const result = await controller.findAll();
+      const result = await controller.findAll({ page: 1, limit: 20 });
 
-      expect(result).toEqual(posts);
-      expect(postsService.findAll).toHaveBeenCalled();
+      expect(result).toEqual(paginatedResult);
+      expect(postsService.findAll).toHaveBeenCalledWith({ page: 1, limit: 20 });
     });
   });
 

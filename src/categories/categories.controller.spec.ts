@@ -32,14 +32,23 @@ describe('CategoriesController', () => {
   });
 
   describe('findAll', () => {
-    it('should return array of categories', async () => {
-      const categories = [{ id: 1, name: 'Tech' }];
-      categoriesService.findAll!.mockResolvedValue(categories);
+    it('should return paginated array of categories', async () => {
+      const paginatedResult = {
+        data: [{ id: 1, name: 'Tech' }],
+        total: 1,
+        page: 1,
+        limit: 20,
+        totalPages: 1,
+      };
+      categoriesService.findAll!.mockResolvedValue(paginatedResult);
 
-      const result = await controller.findAll();
+      const result = await controller.findAll({ page: 1, limit: 20 });
 
-      expect(result).toEqual(categories);
-      expect(categoriesService.findAll).toHaveBeenCalled();
+      expect(result).toEqual(paginatedResult);
+      expect(categoriesService.findAll).toHaveBeenCalledWith({
+        page: 1,
+        limit: 20,
+      });
     });
   });
 

@@ -9,6 +9,8 @@ import * as bcrypt from 'bcrypt';
 import { User } from './users.entity';
 import { CreateUserDto } from './DTO/create-user.dto';
 import { UpdateUserDto } from './DTO/update-user.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
 
 @Injectable()
 export class UsersService {
@@ -19,8 +21,16 @@ export class UsersService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async findAll(): Promise<User[]> {
-    return this.userRepository.find();
+  async findAll(
+    paginationQuery: PaginationQueryDto,
+  ): Promise<PaginatedResponseDto<User>> {
+    const { page = 1, limit = 20 } = paginationQuery;
+    const [data, total] = await this.userRepository.findAndCount({
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return new PaginatedResponseDto(data, total, page, limit);
   }
 
   async findById(id: number): Promise<User> {

@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -22,6 +23,7 @@ import {
 } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../auth/user.decorator';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './DTO/create-post.dto';
 import { UpdatePostDto } from './DTO/update-post.dto';
@@ -32,23 +34,26 @@ import { UpdatePostDto } from './DTO/update-post.dto';
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
-  @ApiOperation({ summary: 'List published posts (public)' })
+  @ApiOperation({ summary: 'List published posts (public, paginated)' })
   @ApiResponse({
     status: 200,
-    description: 'Returns published posts (newest first)',
+    description: 'Returns paginated published posts (newest first)',
   })
   @Get()
-  findPublished() {
-    return this.postsService.findPublished();
+  findPublished(@Query() paginationQuery: PaginationQueryDto) {
+    return this.postsService.findPublished(paginationQuery);
   }
 
-  @ApiOperation({ summary: 'List all posts including drafts' })
+  @ApiOperation({ summary: 'List all posts including drafts (paginated)' })
   @ApiBearerAuth('JWT-auth')
-  @ApiResponse({ status: 200, description: 'Returns all posts' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns paginated list of all posts',
+  })
   @UseGuards(AuthGuard)
   @Get('all')
-  findAll() {
-    return this.postsService.findAll();
+  findAll(@Query() paginationQuery: PaginationQueryDto) {
+    return this.postsService.findAll(paginationQuery);
   }
 
   @ApiOperation({ summary: 'Get a post by ID (public)' })

@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -21,6 +22,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './DTO/create-user.dto';
 import { UpdateUserDto } from './DTO/update-user.dto';
@@ -31,13 +33,13 @@ import { UpdateUserDto } from './DTO/update-user.dto';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @ApiOperation({ summary: 'List all users' })
+  @ApiOperation({ summary: 'List all users (paginated)' })
   @ApiBearerAuth('JWT-auth')
-  @ApiResponse({ status: 200, description: 'Returns array of users' })
+  @ApiResponse({ status: 200, description: 'Returns paginated array of users' })
   @UseGuards(AuthGuard)
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@Query() paginationQuery: PaginationQueryDto) {
+    return this.usersService.findAll(paginationQuery);
   }
 
   @ApiOperation({ summary: 'Get a user by ID' })

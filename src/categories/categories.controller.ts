@@ -9,6 +9,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -19,6 +20,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './DTO/create-category.dto';
 import { UpdateCategoryDto } from './DTO/update-category.dto';
@@ -28,11 +30,14 @@ import { UpdateCategoryDto } from './DTO/update-category.dto';
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
-  @ApiOperation({ summary: 'List all categories (public)' })
-  @ApiResponse({ status: 200, description: 'Returns array of categories' })
+  @ApiOperation({ summary: 'List all categories (public, paginated)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns paginated array of categories',
+  })
   @Get()
-  findAll() {
-    return this.categoriesService.findAll();
+  findAll(@Query() paginationQuery: PaginationQueryDto) {
+    return this.categoriesService.findAll(paginationQuery);
   }
 
   @ApiOperation({ summary: 'Get a category by ID (public)' })

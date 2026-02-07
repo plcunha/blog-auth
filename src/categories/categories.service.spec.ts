@@ -9,6 +9,7 @@ type MockRepository = Partial<Record<keyof Repository<Category>, jest.Mock>>;
 
 const createMockRepository = (): MockRepository => ({
   find: jest.fn(),
+  findAndCount: jest.fn(),
   findOneBy: jest.fn(),
   create: jest.fn(),
   save: jest.fn(),
@@ -40,13 +41,21 @@ describe('CategoriesService', () => {
   });
 
   describe('findAll', () => {
-    it('should return all categories', async () => {
+    it('should return paginated categories', async () => {
       const categories = [{ id: 1, name: 'Tech' }];
-      repository.find!.mockResolvedValue(categories);
+      repository.findAndCount!.mockResolvedValue([categories, 1]);
 
-      const result = await service.findAll();
+      const result = await service.findAll({ page: 1, limit: 20 });
 
-      expect(result).toEqual(categories);
+      expect(result.data).toEqual(categories);
+      expect(result.total).toBe(1);
+      expect(result.page).toBe(1);
+      expect(result.totalPages).toBe(1);
+      expect(repository.findAndCount).toHaveBeenCalledWith({
+        order: { name: 'ASC' },
+        skip: 0,
+        take: 20,
+      });
     });
   });
 
