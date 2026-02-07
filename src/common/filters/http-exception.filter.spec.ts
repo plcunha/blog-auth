@@ -102,6 +102,39 @@ describe('AllExceptionsFilter', () => {
     );
   });
 
+  it('should fall back to error field when message is falsy in object response', () => {
+    const exception = new HttpException(
+      { error: 'Custom Error', statusCode: 422 },
+      422,
+    );
+
+    filter.catch(exception, mockHttpArgumentsHost as ArgumentsHost);
+
+    expect(mockStatus).toHaveBeenCalledWith(422);
+    expect(mockJson).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 422,
+        message: 'Custom Error',
+        error: 'Custom Error',
+        path: '/api/v1/test',
+      }),
+    );
+  });
+
+  it('should fall back to default message when both message and error are falsy in object response', () => {
+    const exception = new HttpException({ statusCode: 418 }, 418);
+
+    filter.catch(exception, mockHttpArgumentsHost as ArgumentsHost);
+
+    expect(mockStatus).toHaveBeenCalledWith(418);
+    expect(mockJson).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 418,
+        message: 'Internal server error',
+      }),
+    );
+  });
+
   it('should handle validation pipe errors (message as array)', () => {
     const exception = new HttpException(
       {

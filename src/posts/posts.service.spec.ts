@@ -61,6 +61,21 @@ describe('PostsService', () => {
         take: 20,
       });
     });
+
+    it('should use default page=1 and limit=20 when not provided', async () => {
+      repository.findAndCount!.mockResolvedValue([[], 0]);
+
+      const result = await service.findAll({} as any);
+
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(20);
+      expect(repository.findAndCount).toHaveBeenCalledWith({
+        relations: ['author', 'category'],
+        order: { createdAt: 'DESC' },
+        skip: 0,
+        take: 20,
+      });
+    });
   });
 
   describe('findPublished', () => {
@@ -78,6 +93,22 @@ describe('PostsService', () => {
         order: { createdAt: 'DESC' },
         skip: 0,
         take: 10,
+      });
+    });
+
+    it('should use default page=1 and limit=20 when not provided', async () => {
+      repository.findAndCount!.mockResolvedValue([[], 0]);
+
+      const result = await service.findPublished({} as any);
+
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(20);
+      expect(repository.findAndCount).toHaveBeenCalledWith({
+        where: { isPublished: true },
+        relations: ['author', 'category'],
+        order: { createdAt: 'DESC' },
+        skip: 0,
+        take: 20,
       });
     });
   });

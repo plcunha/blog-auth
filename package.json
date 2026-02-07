@@ -78,6 +78,7 @@
     "collectCoverageFrom": [
       "**/*.(t|j)s",
       "!**/*.module.ts",
+      "!**/*.entity.ts",
       "!**/main.ts",
       "!**/seed.ts"
     ],
