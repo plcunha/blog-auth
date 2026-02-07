@@ -4,6 +4,8 @@ import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -19,6 +21,12 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true,
   });
+
+  // Global exception filter — consistent JSON error responses
+  app.useGlobalFilters(new AllExceptionsFilter());
+
+  // Global logging interceptor — logs every request + response time
+  app.useGlobalInterceptors(new LoggingInterceptor());
 
   // Global validation pipe - enforces DTO validation on all endpoints
   app.setGlobalPrefix('api/v1');
