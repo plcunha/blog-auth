@@ -35,10 +35,13 @@ npm install
 # 3. Copy .env.example to .env and configure
 cp .env.example .env
 
-# 4. Seed the database (optional — creates admin + sample data)
+# 4. Run database migrations
+npm run migration:run
+
+# 5. Seed the database (optional — creates admin + sample data)
 npm run seed
 
-# 5. Start in development mode
+# 6. Start in development mode
 npm run start:dev
 ```
 
@@ -162,6 +165,81 @@ Response format:
 
 ---
 
+## Database Migrations
+
+This project uses **TypeORM migrations** for safe database schema management. Migrations are versioned SQL change scripts that run in order to evolve your database schema.
+
+### Why Migrations?
+
+- **Production Safety**: `synchronize: false` prevents TypeORM from auto-altering production schemas
+- **Version Control**: All schema changes are tracked in Git
+- **Rollback Support**: Migrations can be reverted if needed
+- **Team Collaboration**: Everyone runs the same schema changes in order
+
+### Running Migrations
+
+```bash
+# Run all pending migrations (also runs automatically in production)
+npm run migration:run
+
+# Check migration status
+npm run migration:show
+
+# Rollback the last migration (use with caution)
+npm run migration:revert
+```
+
+**In production**: Migrations run automatically on startup (`migrationsRun: true` in `app.module.ts`).
+
+### Creating New Migrations
+
+When you modify an entity (e.g., add a field to `User`):
+
+```bash
+# 1. Make your changes to the entity file (e.g., users.entity.ts)
+
+# 2. Start the database (required for migration generation)
+docker compose up -d database
+
+# 3. Generate migration from entity changes
+npm run migration:generate src/database/migrations/AddUserPhoneNumber
+
+# 4. Review the generated migration file in src/database/migrations/
+
+# 5. Test the migration
+npm run migration:run
+
+# 6. Commit both the entity and migration files
+git add src/users/users.entity.ts src/database/migrations/*AddUserPhoneNumber.ts
+git commit -m "feat: add phone number to user entity"
+```
+
+### Creating Empty Migrations
+
+For data migrations or complex schema changes:
+
+```bash
+# Create an empty migration template
+npm run migration:create src/database/migrations/MigrateUserRoles
+
+# Edit the file manually, then run it
+npm run migration:run
+```
+
+### Migration Files
+
+All migrations are stored in `src/database/migrations/` and compiled to `dist/database/migrations/` during build.
+
+**Initial migration** (`1709350000000-InitialSchema.ts`) creates:
+
+- `users` table with role-based access control
+- `categories` table with soft-delete support
+- `posts` table with author/category relationships
+- Foreign keys with CASCADE and SET NULL behaviors
+- Indexes on email, username, slug, and foreign keys
+
+---
+
 ## Security Features
 
 - **Helmet** — HTTP security headers
@@ -173,10 +251,211 @@ Response format:
 - **Role-Based Access Control** — `@Roles('admin')` + `RolesGuard`
 - **Post Ownership** — Users can only modify/delete their own posts
 - **Soft Deletes** — Posts and categories are soft-deleted (recoverable)
-- **Fail-Fast Startup** — App refuses to start without `JWT_SECRET`
+- **Fail-Fast Startup** — App refuses to start without `JWT_SECRET` and `JWT_REFRESH_SECRET`
 - **Correlation IDs** — Every request gets/preserves an `X-Request-Id` header for traceability
 - **Graceful Shutdown** — Proper cleanup on SIGTERM/SIGINT via shutdown hooks
 - **Non-Root Docker** — Production container runs as unprivileged user
+- **Migration-Only Schema Changes** — `synchronize: false` prevents accidental schema alterations
+
+### Security Considerations
+
+#### JWT Secrets
+
+Both `JWT_SECRET` and `JWT_REFRESH_SECRET` **must** be set for the application to start. Generate cryptographically strong secrets:
+
+```bash
+# Generate a 512-bit random secret (recommended for production)
+openssl rand -base64 64
+```
+
+Never use the example values from `.env.example` in production.
+
+#### CORS Configuration
+
+The default `CORS_ORIGIN=*` allows requests from any origin. **In production**, set this to your specific frontend domain:
+
+```bash
+CORS_ORIGIN=https://yourdomain.com
+```
+
+#### Refresh Token Security
+
+Current implementation stores refresh tokens as JWTs (stateless). For enhanced security in production, consider implementing token revocation:
+
+**Option A: Redis Blacklist**
+
+- Store revoked token IDs in Redis with TTL
+- Check blacklist on every refresh attempt
+
+**Option B: Database Table**
+
+- Create `refresh_tokens` table with `userId`, `tokenHash`, `expiresAt`
+- Delete token on logout or password change
+- Query DB on refresh to verify token validity
+
+This allows forced logout on security events (password change, suspicious activity, etc.).
+
+#### Dependency Vulnerabilities
+
+As of the last audit, there are some remaining npm vulnerabilities:
+
+- Most are in **dev dependencies** (webpack, @nestjs/cli) — low production risk
+- One runtime issue in **multer** (file upload library) — not currently used in this API
+
+Run `npm audit` regularly and apply fixes:
+
+```bash
+npm audit
+npm audit fix
+```
+
+For vulnerabilities without automated fixes, evaluate the risk and consider:
+
+- Updating to patched versions manually
+- Finding alternative packages
+- Accepting the risk if the vulnerable code path isn't used
+
+---
+
+## Production Deployment
+
+### Required Environment Variables
+
+Before deploying to production, ensure these variables are set:
+
+| Variable             | Required | Production Recommendation                          |
+| -------------------- | -------- | -------------------------------------------------- |
+| `JWT_SECRET`         | ✅ Yes   | 512-bit random string (`openssl rand -base64 64`)  |
+| `JWT_REFRESH_SECRET` | ✅ Yes   | 512-bit random string (different from JWT_SECRET)  |
+| `DB_HOST`            | ✅ Yes   | Production database hostname                       |
+| `DB_USERNAME`        | ✅ Yes   | Database user with appropriate permissions         |
+| `DB_PASSWORD`        | ✅ Yes   | Strong database password                           |
+| `DB_DATABASE`        | ✅ Yes   | Production database name                           |
+| `CORS_ORIGIN`        | ✅ Yes   | Your frontend domain (e.g., `https://example.com`) |
+| `NODE_ENV`           | ⚠️ Yes   | Must be `production`                               |
+| `PORT`               | No       | Defaults to `3000`                                 |
+
+### Secrets Management
+
+**Do not** hardcode secrets in your deployment configuration. Use a secrets manager:
+
+- **AWS**: AWS Secrets Manager or AWS Systems Manager Parameter Store
+- **GCP**: Google Secret Manager
+- **Azure**: Azure Key Vault
+- **Kubernetes**: Kubernetes Secrets with encryption at rest
+- **HashiCorp Vault**: For multi-cloud or on-premises deployments
+
+### Database Migration Strategy
+
+Migrations run **automatically on application startup** in production (`migrationsRun: true`).
+
+**Deployment workflow:**
+
+1. **Pre-deployment**: Review pending migrations
+
+   ```bash
+   npm run migration:show
+   ```
+
+2. **Deploy**: Start the application
+   - Migrations run automatically before accepting traffic
+   - Application fails to start if migrations fail (safe)
+
+3. **Verify**: Check logs for migration success
+   ```
+   [TypeORM] Migration 1709350000000-InitialSchema has been executed successfully
+   ```
+
+**For zero-downtime deployments**, run migrations separately before deploying:
+
+```bash
+# On your deployment server or in a pre-deploy job
+npm run migration:run
+```
+
+Then deploy the application code with `migrationsRun: false` in production.
+
+### Database Backups
+
+Implement a backup strategy before running in production:
+
+- **Automated backups**: Daily full backups, hourly incremental
+- **Retention policy**: Keep 30 days of backups minimum
+- **Test restores**: Regularly verify backup integrity
+- **Point-in-time recovery**: Enable binary logging in MySQL for transaction-level recovery
+
+**Example backup command:**
+
+```bash
+# MySQL backup
+mysqldump -u $DB_USERNAME -p$DB_PASSWORD $DB_DATABASE \
+  --single-transaction \
+  --routines \
+  --triggers \
+  > backup-$(date +%Y%m%d-%H%M%S).sql
+```
+
+### Health Checks
+
+The API provides two health check endpoints:
+
+- **Fast check** (no DB query): `GET /health`
+  - Use for load balancer health checks
+  - Returns 200 OK if app is running
+
+- **Detailed check** (with DB): `GET /health/details`
+  - Use for monitoring and alerting
+  - Returns DB connection status and detailed metrics
+
+**Example Docker health check** (already configured):
+
+```dockerfile
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
+```
+
+### Deployment Checklist
+
+Before going to production:
+
+- [ ] Generate strong JWT secrets with `openssl rand -base64 64`
+- [ ] Set `CORS_ORIGIN` to your frontend domain (not `*`)
+- [ ] Configure secrets manager (AWS Secrets Manager, etc.)
+- [ ] Set up database backups with retention policy
+- [ ] Test database restore procedure
+- [ ] Review and run pending migrations
+- [ ] Configure monitoring and alerting (CPU, memory, error rate)
+- [ ] Set up log aggregation (CloudWatch, Datadog, ELK stack)
+- [ ] Enable HTTPS/TLS for API (use reverse proxy like nginx)
+- [ ] Test health check endpoints
+- [ ] Configure rate limiting based on expected traffic
+- [ ] Document rollback procedure
+- [ ] Test rollback with staging environment
+
+### Monitoring Recommendations
+
+**Metrics to track:**
+
+- Request rate (requests/second)
+- Error rate (4xx, 5xx responses)
+- Response latency (p50, p95, p99)
+- Database connection pool usage
+- CPU and memory usage
+- JWT token validation failures (potential attacks)
+
+**Logging:**
+
+- All requests are logged via `LoggingInterceptor`
+- Correlation IDs in `X-Request-Id` header for request tracing
+- Consider structured logging (JSON format) for better parsing
+
+**Alerting:**
+
+- High error rate (>5% 5xx responses)
+- High response latency (p95 > 1000ms)
+- Database connection failures
+- Health check failures
+- Disk space low (migrations need disk space)
 
 ---
 

@@ -20,6 +20,13 @@ async function bootstrap() {
     );
   }
 
+  const jwtRefreshSecret = configService.get<string>('JWT_REFRESH_SECRET');
+  if (!jwtRefreshSecret) {
+    throw new Error(
+      'Variável de ambiente JWT_REFRESH_SECRET é obrigatória — abortando inicialização',
+    );
+  }
+
   // Enable graceful shutdown hooks (SIGTERM, SIGINT)
   app.enableShutdownHooks();
 

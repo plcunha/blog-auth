@@ -45,7 +45,9 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_DATABASE'),
         autoLoadEntities: true,
-        synchronize: configService.get<string>('NODE_ENV') === 'development',
+        synchronize: false, // Disabled - use migrations instead for safety
+        migrations: ['dist/database/migrations/*{.ts,.js}'],
+        migrationsRun: configService.get<string>('NODE_ENV') === 'production',
         logging: configService.get<string>('NODE_ENV') === 'development',
       }),
     }),
